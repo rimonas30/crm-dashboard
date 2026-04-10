@@ -189,39 +189,84 @@
       }
       .sidebar-logo {
         border-bottom: none;
-        padding: .625rem 1rem;
+        padding: .375rem .75rem;
       }
+      .logo-mark { width: 22px; height: 22px; }
+      .logo-text { font-size: .75rem; }
+      .logo-sub { display: none; }
       .sidebar-nav {
         flex: 1;
         display: flex;
         flex-direction: row;
         align-items: center;
-        padding: .25rem .5rem;
-        gap: .25rem;
+        padding: .125rem .375rem;
+        gap: .125rem;
         overflow-x: auto;
       }
       .nav-section-label { display: none; }
-      .nav-item { white-space: nowrap; padding: .375rem .5rem; font-size: .75rem; }
+      .nav-item { white-space: nowrap; padding: .25rem .375rem; font-size: .6875rem; gap: .3rem; }
+      .nav-icon { width: 13px; height: 13px; }
+      .nav-badge { font-size: .5625rem; padding: .0625rem .25rem; }
       .sidebar-footer {
         border-top: none;
         border-left: 1px solid var(--divider);
-        padding: .5rem .75rem;
-        gap: .375rem;
+        padding: .375rem .5rem;
+        gap: .25rem;
       }
       .footer-updated { display: none; }
-      .content { padding: 1rem; gap: 1rem; }
-      .kpi-grid { grid-template-columns: repeat(5, 1fr); }
-      .kpi-label { font-size: .5625rem; }
-      .kpi-value { font-size: 1.375rem; }
-      .charts-row-2 { grid-template-columns: 1fr 1fr; }
-      .insights-grid { grid-template-columns: 1fr 1fr; }
+      .icon-btn { width: 26px; height: 26px; }
+      /* topbar */
+      .topbar { height: 40px; padding: 0 .875rem; gap: .5rem; }
+      .topbar-title { font-size: .8125rem; }
+      .period-btn { font-size: .6875rem; padding: .1875rem .5rem; }
+      /* content */
+      .content { padding: .625rem !important; gap: .625rem !important; }
+      /* KPIs */
+      .kpi-grid { grid-template-columns: repeat(5, 1fr) !important; gap: .375rem !important; }
+      .kpi-card { padding: .5rem .625rem !important; gap: .0625rem !important; }
+      .kpi-header { margin-bottom: .125rem !important; }
+      .kpi-label { font-size: .5rem !important; }
+      .kpi-value { font-size: 1rem !important; }
+      .kpi-sub { font-size: .5625rem !important; }
+      .kpi-icon { width: 18px !important; height: 18px !important; }
+      .kpi-badge { margin-top: .0625rem !important; font-size: .5rem !important; padding: .0625rem .3rem !important; }
+      /* charts */
+      .charts-row { grid-template-columns: 2fr 1.5fr 1.25fr !important; gap: .375rem !important; }
+      .charts-row-2 { grid-template-columns: 1fr 1fr 1fr !important; gap: .375rem !important; }
+      .card { padding: .5rem .625rem !important; gap: .25rem !important; }
+      .card-title { font-size: .6875rem !important; }
+      .card-sub { font-size: .5rem !important; }
+      /* insights */
+      .insights-grid { grid-template-columns: 1fr 1fr 1fr !important; gap: .375rem !important; }
+      .insight-card { padding: .375rem .5rem !important; gap: .375rem !important; }
+      .insight-icon { width: 22px !important; height: 22px !important; border-radius: .3rem !important; }
+      .insight-title { font-size: .625rem !important; margin-bottom: .0625rem !important; }
+      .insight-text { font-size: .5625rem !important; line-height: 1.35 !important; }
+      .insight-value { font-size: .8125rem !important; margin-top: .0625rem !important; }
+      /* section header */
+      .section-title { font-size: .5rem; }
+      /* chart heights */
+      .donut-chart-wrap { width: 80px !important; height: 80px !important; }
+      .donut-pct { font-size: .875rem; }
+      .donut-lbl { font-size: .5rem; }
+      .funnel-bar-bg { height: 14px; }
+      .funnel-label { font-size: .5rem; width: 60px; }
+      .funnel-meta { font-size: .5rem; width: 48px; }
+      .funnel { gap: .3rem; }
+      /* open pipeline items */
+      .cust-list { gap: .3rem; }
+      .cust-row { gap: .4rem; }
+      .cust-name { font-size: .625rem; }
+      .cust-amt { font-size: .625rem; }
+      .cust-avatar { width: 22px; height: 22px; font-size: .4375rem; }
+      .donut-legend { gap: .3rem; }
+      .legend-item span { font-size: .625rem; }
+      .legend-val { font-size: .5625rem; }
     }
     @media (max-width: 700px) {
       .kpi-grid { grid-template-columns: repeat(2, 1fr); }
       .charts-row, .charts-row-2, .insights-grid { grid-template-columns: 1fr; }
-      .logo-text { font-size: .6875rem; }
-      .logo-sub { display: none; }
-      .content { padding: .75rem; }
+      .content { padding: .5rem; }
     }
 
     /* ── MAIN ───────────────────────────────────────────── */
@@ -690,6 +735,8 @@ function render() {
 
 // ── OVERVIEW ──────────────────────────────────────────
 function renderOverview() {
+  const isEmbed = window.innerWidth <= 1100;
+  const chartH = isEmbed ? 90 : 160;
   const inPeriod = filterByPeriod(allDeals);
   const won   = inPeriod.filter(d=>d.stage==='Closed Won');
   const lost  = inPeriod.filter(d=>d.stage==='Closed Lost');
@@ -824,7 +871,7 @@ function renderOverview() {
             <div class="card-sub">Gewonnene Deals (Netto) — letzte 6 Monate</div>
           </div>
         </div>
-        <div class="chart-wrap" style="height:160px">
+        <div class="chart-wrap" id="wrap-monthly" style="height:${chartH}px">
           <canvas id="chart-monthly"></canvas>
         </div>
       </div>
@@ -936,7 +983,7 @@ function renderOverview() {
             <div class="card-sub">Gewonnene Deals nach Kategorie</div>
           </div>
         </div>
-        <div class="chart-wrap" style="height:160px">
+        <div class="chart-wrap" id="wrap-types" style="height:${chartH}px">
           <canvas id="chart-types"></canvas>
         </div>
       </div>

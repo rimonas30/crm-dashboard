@@ -1,0 +1,1318 @@
+<!DOCTYPE html>
+<html lang="de" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>vjsual CRM — Sales Insights</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    /* ── TOKENS ─────────────────────────────────────────── */
+    :root {
+      --bg:            #111110;
+      --surface:       #171614;
+      --surface-2:     #1c1b19;
+      --surface-3:     #222120;
+      --border:        #2e2d2b;
+      --divider:       #252422;
+      --text:          #cdccca;
+      --text-muted:    #797876;
+      --text-faint:    #454442;
+      --primary:       #4f98a3;
+      --primary-h:     #3a7f8a;
+      --success:       #6daa45;
+      --success-bg:    #1b2f1a;
+      --error:         #cc5f5f;
+      --error-bg:      #2c1a1a;
+      --warn:          #c4813a;
+      --warn-bg:       #2c2016;
+      --gold:          #e8af34;
+      --gold-bg:       #2a2213;
+      --blue:          #5591c7;
+      --blue-bg:       #151e2b;
+      --shadow-sm:  0 1px 3px rgba(0,0,0,.25);
+      --shadow-md:  0 4px 16px rgba(0,0,0,.35);
+      --r-sm: .375rem;
+      --r-md: .5rem;
+      --r-lg: .75rem;
+      --r-xl: 1rem;
+      --font: 'Inter', system-ui, sans-serif;
+      --mono: 'JetBrains Mono', monospace;
+      --ease: 160ms cubic-bezier(0.16,1,0.3,1);
+      --sidebar-w: 220px;
+    }
+    [data-theme="light"] {
+      --bg:            #f4f3ef;
+      --surface:       #faf9f7;
+      --surface-2:     #ffffff;
+      --surface-3:     #f0ede8;
+      --border:        #d4d1ca;
+      --divider:       #dcd9d5;
+      --text:          #28251d;
+      --text-muted:    #7a7974;
+      --text-faint:    #bab9b4;
+      --primary:       #01696f;
+      --primary-h:     #0c4e54;
+      --success:       #437a22;
+      --success-bg:    #d4dfcc;
+      --error:         #b03030;
+      --error-bg:      #e2cfcf;
+      --warn:          #964219;
+      --warn-bg:       #ddcfc6;
+      --gold:          #c48c00;
+      --gold-bg:       #e9e0c6;
+      --blue:          #006494;
+      --blue-bg:       #c6d8e4;
+      --shadow-sm:  0 1px 2px rgba(40,37,29,.06);
+      --shadow-md:  0 4px 12px rgba(40,37,29,.1);
+    }
+
+    /* ── RESET ──────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; font-family: var(--font); background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; }
+
+    /* ── LAYOUT ─────────────────────────────────────────── */
+    .app { display: flex; height: 100vh; overflow: hidden; }
+
+    /* ── SIDEBAR ────────────────────────────────────────── */
+    .sidebar {
+      width: var(--sidebar-w);
+      flex-shrink: 0;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 0;
+      overflow: hidden;
+    }
+    .sidebar-logo {
+      padding: 1.25rem 1.25rem 1rem;
+      border-bottom: 1px solid var(--divider);
+      display: flex;
+      align-items: center;
+      gap: .625rem;
+    }
+    .logo-mark {
+      width: 28px; height: 28px;
+      background: var(--primary);
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .logo-mark svg { color: #fff; }
+    .logo-text {
+      font-size: .8125rem;
+      font-weight: 700;
+      letter-spacing: .03em;
+      color: var(--text);
+      line-height: 1.2;
+    }
+    .logo-sub { font-size: .625rem; font-weight: 400; color: var(--text-muted); letter-spacing: .02em; }
+
+    .sidebar-nav { flex: 1; padding: .75rem .625rem; overflow-y: auto; }
+    .nav-section-label {
+      font-size: .625rem;
+      font-weight: 600;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+      padding: .5rem .625rem .25rem;
+    }
+    .nav-item {
+      display: flex; align-items: center; gap: .5rem;
+      padding: .5rem .625rem;
+      border-radius: var(--r-md);
+      font-size: .8125rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: background var(--ease), color var(--ease);
+      user-select: none;
+    }
+    .nav-item:hover { background: var(--surface-2); color: var(--text); }
+    .nav-item.active { background: var(--surface-2); color: var(--text); }
+    .nav-item.active .nav-icon { color: var(--primary); }
+    .nav-icon { width: 16px; height: 16px; flex-shrink: 0; }
+    .nav-badge {
+      margin-left: auto;
+      background: var(--surface-3);
+      color: var(--text-muted);
+      font-size: .625rem;
+      font-weight: 600;
+      padding: .125rem .375rem;
+      border-radius: 999px;
+      font-family: var(--mono);
+    }
+
+    .sidebar-footer {
+      padding: .75rem 1rem;
+      border-top: 1px solid var(--divider);
+      display: flex; align-items: center; justify-content: space-between;
+      gap: .5rem;
+    }
+    .footer-updated {
+      font-size: .6875rem;
+      color: var(--text-faint);
+      line-height: 1.3;
+    }
+    .footer-label { font-size: .625rem; color: var(--text-faint); text-transform: uppercase; letter-spacing: .06em; }
+
+    /* Sync indicator */
+    .sync-dot {
+      width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+      background: var(--text-faint);
+      transition: background .3s ease;
+    }
+    .sync-dot.syncing { background: var(--gold); animation: pulse 1s ease-in-out infinite; }
+    .sync-dot.live    { background: var(--success); }
+    .sync-dot.error   { background: var(--error); }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+    .sync-row { display:flex; align-items:center; gap:.375rem; }
+
+    /* ── EMBED / RESPONSIVE ─────────────────────────────── */
+    @media (max-width: 1100px) {
+      .app { flex-direction: column; }
+      .sidebar {
+        width: 100%; height: auto;
+        flex-direction: row;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        padding: 0;
+      }
+      .sidebar-logo {
+        border-bottom: none;
+        padding: .625rem 1rem;
+      }
+      .sidebar-nav {
+        flex: 1;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        padding: .25rem .5rem;
+        gap: .25rem;
+        overflow-x: auto;
+      }
+      .nav-section-label { display: none; }
+      .nav-item { white-space: nowrap; padding: .375rem .5rem; font-size: .75rem; }
+      .sidebar-footer {
+        border-top: none;
+        border-left: 1px solid var(--divider);
+        padding: .5rem .75rem;
+        gap: .375rem;
+      }
+      .footer-updated { display: none; }
+      .content { padding: 1rem; gap: 1rem; }
+      .kpi-grid { grid-template-columns: repeat(5, 1fr); }
+      .kpi-label { font-size: .5625rem; }
+      .kpi-value { font-size: 1.375rem; }
+      .charts-row-2 { grid-template-columns: 1fr 1fr; }
+      .insights-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 700px) {
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+      .charts-row, .charts-row-2, .insights-grid { grid-template-columns: 1fr; }
+      .logo-text { font-size: .6875rem; }
+      .logo-sub { display: none; }
+      .content { padding: .75rem; }
+    }
+
+    /* ── MAIN ───────────────────────────────────────────── */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: var(--bg);
+    }
+    .topbar {
+      height: 52px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 1.5rem;
+      gap: 1rem;
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+    .topbar-title { font-size: .9375rem; font-weight: 600; flex: 1; }
+    .topbar-actions { display: flex; align-items: center; gap: .5rem; }
+
+    /* Period pills */
+    .period-group { display: flex; background: var(--surface-3); border-radius: var(--r-md); padding: .1875rem; gap: .125rem; }
+    .period-btn {
+      font-size: .75rem; font-weight: 500;
+      padding: .25rem .625rem;
+      border-radius: .3125rem;
+      border: none; background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all var(--ease);
+    }
+    .period-btn.active { background: var(--surface-2); color: var(--text); box-shadow: var(--shadow-sm); }
+
+    /* Icon buttons */
+    .icon-btn {
+      width: 32px; height: 32px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: var(--r-md);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all var(--ease);
+    }
+    .icon-btn:hover { background: var(--surface-2); color: var(--text); }
+
+    /* ── SCROLL CONTENT ─────────────────────────────────── */
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+    .content::-webkit-scrollbar { width: 6px; }
+    .content::-webkit-scrollbar-track { background: transparent; }
+    .content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* ── KPI GRID ───────────────────────────────────────── */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: .875rem;
+    }
+    .kpi-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      padding: 1rem 1.125rem;
+      display: flex;
+      flex-direction: column;
+      gap: .25rem;
+      transition: box-shadow var(--ease);
+    }
+    .kpi-card:hover { box-shadow: var(--shadow-md); }
+    .kpi-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: .375rem; }
+    .kpi-label { font-size: .6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; color: var(--text-muted); }
+    .kpi-icon {
+      width: 26px; height: 26px;
+      border-radius: var(--r-sm);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .kpi-value { font-size: 1.625rem; font-weight: 700; line-height: 1.1; color: var(--text); font-variant-numeric: tabular-nums; }
+    .kpi-sub { font-size: .75rem; color: var(--text-muted); margin-top: .125rem; }
+    .kpi-badge {
+      margin-top: .375rem;
+      font-size: .625rem;
+      font-weight: 600;
+      padding: .1875rem .5rem;
+      border-radius: 999px;
+      width: fit-content;
+    }
+    .badge-success { background: var(--success-bg); color: var(--success); }
+    .badge-error   { background: var(--error-bg);   color: var(--error); }
+    .badge-blue    { background: var(--blue-bg);     color: var(--blue); }
+
+    /* ── CHARTS ROW ─────────────────────────────────────── */
+    .charts-row {
+      display: grid;
+      grid-template-columns: 2fr 1.5fr 1.25fr;
+      gap: .875rem;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      padding: 1.125rem 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: .75rem;
+    }
+    .card-header { display: flex; align-items: flex-start; justify-content: space-between; }
+    .card-title { font-size: .875rem; font-weight: 600; color: var(--text); line-height: 1.3; }
+    .card-sub { font-size: .6875rem; color: var(--text-muted); margin-top: .125rem; }
+    .chart-wrap { position: relative; flex: 1; min-height: 0; }
+    .chart-wrap canvas { width: 100% !important; height: 100% !important; }
+
+    /* ── CHARTS ROW 2 ───────────────────────────────────── */
+    .charts-row-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: .875rem;
+    }
+
+    /* ── FUNNEL ─────────────────────────────────────────── */
+    .funnel { display: flex; flex-direction: column; gap: .5rem; flex: 1; }
+    .funnel-row { display: flex; align-items: center; gap: .625rem; }
+    .funnel-label { font-size: .6875rem; font-weight: 500; color: var(--text-muted); width: 80px; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .funnel-bar-wrap { flex: 1; }
+    .funnel-bar-bg { height: 20px; background: var(--surface-3); border-radius: var(--r-sm); overflow: hidden; }
+    .funnel-bar-fill {
+      height: 100%;
+      border-radius: var(--r-sm);
+      display: flex; align-items: center; justify-content: flex-end; padding-right: .375rem;
+      font-size: .625rem; font-weight: 700; color: rgba(255,255,255,.85);
+      transition: width .5s cubic-bezier(0.16,1,0.3,1);
+      min-width: 2px;
+    }
+    .funnel-meta { font-size: .625rem; font-family: var(--mono); color: var(--text-muted); width: 70px; text-align: right; flex-shrink: 0; }
+
+    /* ── DONUT ──────────────────────────────────────────── */
+    .donut-wrap { display: flex; align-items: center; gap: 1rem; flex: 1; }
+    .donut-chart-wrap { position: relative; width: 110px; height: 110px; flex-shrink: 0; }
+    .donut-chart-wrap canvas { width: 100% !important; height: 100% !important; }
+    .donut-center {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      pointer-events: none;
+    }
+    .donut-pct { font-size: 1.1875rem; font-weight: 700; color: var(--text); line-height: 1; }
+    .donut-lbl { font-size: .5625rem; color: var(--text-muted); margin-top: .125rem; text-transform: uppercase; letter-spacing: .06em; }
+    .donut-legend { flex: 1; display: flex; flex-direction: column; gap: .5rem; }
+    .legend-item { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+    .legend-dot-label { display: flex; align-items: center; gap: .375rem; }
+    .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .legend-item span { font-size: .75rem; color: var(--text-muted); }
+    .legend-val { font-size: .6875rem; font-family: var(--mono); color: var(--text); }
+
+    /* ── TOP CUSTOMERS ──────────────────────────────────── */
+    .cust-list { display: flex; flex-direction: column; gap: .5rem; flex: 1; }
+    .cust-row { display: flex; align-items: center; gap: .625rem; }
+    .cust-rank { font-size: .625rem; font-family: var(--mono); font-weight: 600; color: var(--text-faint); width: 14px; text-align: right; flex-shrink: 0; }
+    .cust-avatar {
+      width: 26px; height: 26px; border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .5rem; font-weight: 700; letter-spacing: .02em;
+      flex-shrink: 0;
+    }
+    .cust-info { flex: 1; min-width: 0; }
+    .cust-name { font-size: .75rem; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cust-deals { font-size: .625rem; color: var(--text-muted); }
+    .cust-amt { font-size: .75rem; font-family: var(--mono); font-weight: 600; color: var(--text); flex-shrink: 0; }
+
+    /* ── DEAL TYPE ──────────────────────────────────────── */
+    .type-list { display: flex; flex-direction: column; gap: .5rem; flex: 1; }
+    .type-row { display: flex; align-items: center; gap: .5rem; }
+    .type-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .type-name { font-size: .75rem; color: var(--text-muted); flex: 1; }
+    .type-bar-wrap { width: 60px; }
+    .type-bar-bg { height: 4px; background: var(--surface-3); border-radius: 2px; overflow: hidden; }
+    .type-bar-fill { height: 100%; border-radius: 2px; }
+    .type-count { font-size: .625rem; font-family: var(--mono); color: var(--text-muted); width: 16px; text-align: right; }
+    .type-amt { font-size: .625rem; font-family: var(--mono); color: var(--text); width: 64px; text-align: right; }
+
+    /* ── AGENT INSIGHTS ─────────────────────────────────── */
+    .insights-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: .875rem;
+    }
+    .insight-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      padding: .875rem 1rem;
+      display: flex;
+      gap: .75rem;
+      align-items: flex-start;
+    }
+    .insight-icon {
+      width: 32px; height: 32px; border-radius: var(--r-md);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .insight-body { flex: 1; min-width: 0; }
+    .insight-title { font-size: .8125rem; font-weight: 600; color: var(--text); margin-bottom: .25rem; }
+    .insight-text { font-size: .75rem; color: var(--text-muted); line-height: 1.5; }
+    .insight-value { font-size: 1.0625rem; font-weight: 700; color: var(--text); margin-top: .25rem; font-family: var(--mono); }
+
+    /* ── TABLE ──────────────────────────────────────────── */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: .8125rem; }
+    thead tr { border-bottom: 1px solid var(--divider); }
+    th {
+      font-size: .625rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em;
+      color: var(--text-muted); text-align: left; padding: .5rem .75rem .5rem 0;
+      white-space: nowrap;
+    }
+    td { padding: .625rem .75rem .625rem 0; border-bottom: 1px solid var(--divider); color: var(--text); vertical-align: middle; }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: var(--surface-2); }
+
+    .stage-chip {
+      font-size: .625rem; font-weight: 600;
+      padding: .1875rem .5rem; border-radius: 999px;
+      white-space: nowrap;
+    }
+    .deal-link {
+      display: inline-flex; align-items: center; gap: .25rem;
+      font-size: .6875rem; color: var(--primary); text-decoration: none;
+      transition: color var(--ease);
+    }
+    .deal-link:hover { color: var(--primary-h); }
+
+    /* ── SECTION HEADER ─────────────────────────────────── */
+    .section-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: .125rem;
+    }
+    .section-title {
+      font-size: .6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--text-faint);
+    }
+
+    /* ── SCROLLBAR ──────────────────────────────────────── */
+    * { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-mark">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
+          <polyline points="16 7 22 7 22 13"/>
+        </svg>
+      </div>
+      <div>
+        <div class="logo-text">vjsual</div>
+        <div class="logo-sub">Sales Insights</div>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Ansichten</div>
+      <div class="nav-item active" onclick="switchView('overview')" id="nav-overview">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+          <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+        </svg>
+        Dashboard
+        <span class="nav-badge" id="badge-overview"></span>
+      </div>
+      <div class="nav-item" onclick="switchView('deals')" id="nav-deals">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+        </svg>
+        Alle Deals
+        <span class="nav-badge" id="badge-deals"></span>
+      </div>
+      <div class="nav-item" onclick="switchView('customers')" id="nav-customers">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+        Kunden
+        <span class="nav-badge" id="badge-customers"></span>
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="footer-updated" style="flex:1;min-width:0">
+        <div class="sync-row">
+          <div class="sync-dot syncing" id="sync-indicator"></div>
+          <div class="footer-label">Notion Live</div>
+        </div>
+        <div id="sync-label" style="color:var(--text-muted);font-size:.6875rem;margin-top:.25rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Wird geladen…</div>
+      </div>
+      <div style="display:flex;gap:.375rem;flex-shrink:0">
+        <button class="icon-btn" onclick="loadDeals()" title="Jetzt aktualisieren" style="border:none">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        </button>
+      <button class="icon-btn" onclick="toggleTheme()" title="Theme wechseln" style="border:none">
+        <svg id="theme-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="5"/>
+          <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+          <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        </svg>
+      </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar-title" id="topbar-title">Sales Dashboard</div>
+      <div class="topbar-actions">
+        <div class="period-group" id="period-group">
+          <button class="period-btn" onclick="setPeriod('month')">Monat</button>
+          <button class="period-btn" onclick="setPeriod('quarter')">Quartal</button>
+          <button class="period-btn active" onclick="setPeriod('year')">Jahr</button>
+          <button class="period-btn" onclick="setPeriod('all')">Gesamt</button>
+        </div>
+      </div>
+    </header>
+    <div class="content" id="content"></div>
+  </div>
+</div>
+
+<script>
+// ── CONFIG ─────────────────────────────────────────────
+const API_URL   = 'https://vjsual.app.n8n.cloud/webhook/crm-deals';
+
+// ── BAKED DATA (Fallback) ────────────────────────────────
+const BAKED_DEALS = [{"id": "327c48f4-0763-8098-85cb-c7b19b05d246", "name": "Pascal Dittmann", "company": "Amira Media", "stage": "Negotiation", "dealSize": 20000, "dealType": "", "sevdeskUrl": "", "created_time": "2026-03-18T16:19:00.000Z", "last_edited_time": "2026-04-10T07:56:00.000Z"}, {"id": "33ec48f4-0763-806a-8e20-c1b49bd6cd66", "name": "Unbekannt", "company": "", "stage": "Lead", "dealSize": 0, "dealType": "", "sevdeskUrl": "", "created_time": "2026-04-10T11:29:00.000Z", "last_edited_time": "2026-04-10T11:29:00.000Z"}, {"id": "33ec48f4-0763-8112-ae83-cff0484d6d6f", "name": "AN-2025-3 \u2013 Webinar-Reihe 2026", "company": "Alliance Healthcare Deutschland GmbH", "stage": "Closed Won", "dealSize": 122681.52, "dealType": "", "sevdeskUrl": "https://my.sevdesk.de/om/detail/type/AN/id/25445764", "created_time": "2026-04-10T06:50:00.000Z", "last_edited_time": "2026-04-10T11:06:00.000Z"}, {"id": "33ec48f4-0763-813c-a6c0-c2742b1b5a52", "name": "AN-2026-21 \u2013 E-Learning Gewaltpr\u00e4vention", "company": "Schwarz Corporate Solutions KG", "stage": "Proposal", "dealSize": 19900, "dealType": "", "sevdeskUrl": "https://my.sevdesk.de/om/detail/type/AN/id/27337521", "created_time": "2026-04-10T06:50:00.000Z", "last_edited_time": "2026-04-10T11:00:00.000Z"}, {"id": "33ec48f4-0763-814a-9daf-cce3b464f1ad", "name": "AN-2026-6", "company": "David Manetsgruber / civillent", "stage": "Closed Won", "dealSize": 394, "dealType": "", "sevdeskUrl": "https://my.sevdesk.de/om/detail/type/AN/id/25811690", "created_time": "2026-04-10T06:50:00.000Z", "last_edited_time": "2026-04-10T11:19:00.000Z"}, {"id": "33ec48f4-0763-8150-ab84-d3f42c326df0", "name": "AN-2026-1 \u2013 Mutter/Vater-Kind Kur Erkl\u00e4rfilm", "company": "AOK Rheinland / Hamburg", "stage": "Proposal", "dealSize": 8020, "dealType": "", "sevdeskUrl": "https://my.sevdesk.de/om/detail/type/AN/id/25617492", "created_time": "2026-04-10T06:50:00.000Z", "last_edited_time": "2026-04-10T07:34:00.000Z"}, {"id": "33ec48f4-0763-8157-a986-f8057fe7ea4a", "name": "AN-2026-4 \u2013 Amira Webinar Dr. Jaglas", "company": "Amira Media GmbH", "stage": "Closed Won", "dealSize": 4490, "dealType": "", "sevdeskUrl": "https://my.sevdesk.de/om/detail/type/AN/id/25780255", "created_time": "2026-04-10T06:50:00.000Z", "last_edited_time": "2026-04-10T07:34:00.000Z"}, {"id": "33ec48f4-0763-8172-9aaa-ce6a7d78b6fa", "name": "AN-2025-1 \u2013 AOK Familienservice", "company": "AOK Rheinland / Hamburg", "stage": "Closed Won", "dealSize": 5560, "dealType": "", "sevdeskUrl": "https://my.sevdesk.de/om/detail/type/AN/id/25302283", "created_time": "2026-04-10T06:50:00.000Z", "last_edited_time": "2026-04-10T10:42:00.000Z"}, {"id": "33ec48f4-0763-8177-bdbc-e82e3c9acf98", "name": "AN-2026-18", "company": "KWS Berlin GmbH", "stage": "Closed Won", "dealSize": 1527.45, "dealType": "", "sevdeskUrl": "https://my.sevdesk.de/om/detail/type/AN/id/26843746", "created_time": "2026-04-10T06:50:00.000Z", "last_edited_time": "2026-04-10T11:14:00.000Z"}, {"id": "33ec48f4-0763-8191-bcac-f4c501f7badd", "name": "AN-2026-12", "company": "", "stage": "Closed Won", "dealSize": 0, "dealType": "", "sevdeskUrl": "", "created_time": "2026-04-10T10:00:00.000Z", "last_edited_time": "2026-04-10T10:00:00.000Z"}, {"id": "33ec48f4-0763-8195-a8bf-e1c78087d4d8", "name": "AN-2026-12", "company": "", "stage": "Closed Won", "dealSize": 0, "dealType": "", "sevdeskUrl": "", "created_time": "2026-04-10T11:00:00.000Z", "last_edited_time": "2026-04-10T11:00:00.000Z"}, {"id": "33ec48f4-0763-819e-a8d5-e87bf8486980", "name": "AN-2026-8 \u2013 Patienten-Comic Film FEMTIS", "company": "Teleon Surgical Vertriebs GmbH", "stage": "Closed Won", "dealSize": 11346, "dealType": "", "sevdeskUrl": "https://my.sevdesk.de/om/detail/type/AN/id/26007645", "created_time": "2026-04-10T06:50:00.000Z", "last_edited_time": "2026-04-10T11:14:00.000Z"}, {"id": "33ec48f4-0763-819e-aabd-d97143237026", "name": "AN-2026-14 \u2013 Corn", "company": "KWS Berlin GmbH", "stage": "Closed Won", "dealSize": 5312.5, "dealType": "", "sevdeskUrl": "https://my.sevdesk.de/om/detail/type/AN/id/26843445", "created_time": "2026-04-10T06:50:00.000Z", "last_edited_time": "2026-04-10T11:14:00.000Z"}, {"id": "33ec48f4-0763-81a8-aa5e-ec9c82f69b93", "name": "AN-2026-17", "company": "KWS Berlin GmbH", "stage": "Closed Won", "dealSize": 5312.5, "dealType": "", "sevdeskUrl": "https://my.sevdesk.de/om/detail/type/AN/id/26843667", "created_time": "2026-04-10T06:50:00.000Z", "last_edited_time": "2026-04-10T11:14:00.000Z"}, {"id": "33ec48f4-0763-81b5-bd54-d0b2f9451f15", "name": "AN-2026-13 \u2013 Sugarbeet", "company": "KWS Berlin GmbH", "stage": "Closed Won", "dealSize": 5814, "dealType": "", "sevdeskUrl": "https://my.sevdesk.de/om/detail/type/AN/id/26843376", "created_time": "2026-04-10T06:50:00.000Z", "last_edited_time": "2026-04-10T11:14:00.000Z"}, {"id": "33ec48f4-0763-81b7-9eed-c32a7784ab3f", "name": "AN-2026-9 \u2013 inspiring citrus New Core Video", "company": "Franziska Koch / Symrise AG", "stage": "Closed Won", "dealSize": 9139, "dealType": "", "sevdeskUrl": "https://my.sevdesk.de/om/detail/type/AN/id/26078530", "created_time": "2026-04-10T06:50:00.000Z", "last_edited_time": "2026-04-10T11:18:00.000Z"}, {"id": "33ec48f4-0763-81b8-8d3c-cebef5e136c7", "name": "AN-2025-2 \u2013 AOK Remake Patientenbegleitung", "company": "AOK Rheinland / Hamburg", "stage": "Proposal", "dealSize": 3850, "dealType": "Content", "sevdeskUrl": "https://my.sevdesk.de/om/detail/type/AN/id/25310319", "created_time": "2026-04-10T06:50:00.000Z", "last_edited_time": "2026-04-10T09:08:00.000Z"}, {"id": "33ec48f4-0763-81bf-ae69-c80792956398", "name": "AN-2026-12 \u2013 Erkl\u00e4rvideo Applikation Remake", "company": "Swedish Orphan Biovitrum GmbH", "stage": "Qualified", "dealSize": 17703, "dealType": "", "sevdeskUrl": "https://my.sevdesk.de/om/detail/type/AN/id/26706891", "created_time": "2026-04-10T06:50:00.000Z", "last_edited_time": "2026-04-10T11:29:00.000Z"}, {"id": "33ec48f4-0763-81c3-a3dc-e0c9e91a784e", "name": "AN-2026-20", "company": "Rick Sprotte | Bundesvereinigung Lebenshilfe e.V.", "stage": "Closed Lost", "dealSize": 14500, "dealType": "", "sevdeskUrl": "https://my.sevdesk.de/om/detail/type/AN/id/26519327", "created_time": "2026-04-10T06:50:00.000Z", "last_edited_time": "2026-04-10T11:29:00.000Z"}, {"id": "33ec48f4-0763-81dc-9c9c-dfbf6c0b5a72", "name": "AN-2026-11 \u2013 Nugget-Paket 01/26", "company": "Amira Media GmbH", "stage": "Closed Won", "dealSize": 25089.5, "dealType": "", "sevdeskUrl": "https://my.sevdesk.de/om/detail/type/AN/id/26265792", "created_time": "2026-04-10T06:50:00.000Z", "last_edited_time": "2026-04-10T11:14:00.000Z"}, {"id": "33ec48f4-0763-81de-ab8a-c47f7b603eac", "name": "AN-2026-12", "company": "EiiF - European Industrial Insulation Foundation", "stage": "Closed Won", "dealSize": 875, "dealType": "", "sevdeskUrl": "https://my.sevdesk.de/om/detail/type/AN/id/26706891", "created_time": "2026-04-10T06:50:00.000Z", "last_edited_time": "2026-04-10T07:34:00.000Z"}, {"id": "33ec48f4-0763-81e1-9788-ed1b0d9c5b66", "name": "AN-2026-16", "company": "KWS Berlin GmbH", "stage": "Closed Won", "dealSize": 4811, "dealType": "", "sevdeskUrl": "https://my.sevdesk.de/om/detail/type/AN/id/26843585", "created_time": "2026-04-10T06:50:00.000Z", "last_edited_time": "2026-04-10T11:14:00.000Z"}, {"id": "33ec48f4-0763-81e2-af80-f736c3fa585f", "name": "AN-2026-7", "company": "AOK Rheinland / Hamburg", "stage": "Proposal", "dealSize": 9485, "dealType": "", "sevdeskUrl": "https://my.sevdesk.de/om/detail/type/AN/id/25960568", "created_time": "2026-04-10T06:50:00.000Z", "last_edited_time": "2026-04-10T07:34:00.000Z"}, {"id": "33ec48f4-0763-81e2-bc12-dce79bd478d2", "name": "AN-2026-5", "company": "Amira Media GmbH", "stage": "Closed Won", "dealSize": 4275, "dealType": "", "sevdeskUrl": "https://my.sevdesk.de/om/detail/type/AN/id/25780296", "created_time": "2026-04-10T06:50:00.000Z", "last_edited_time": "2026-04-10T11:14:00.000Z"}, {"id": "33ec48f4-0763-81ef-ab4b-fdc3886ea1f4", "name": "AN-2026-15", "company": "KWS Berlin GmbH", "stage": "Closed Won", "dealSize": 4309.5, "dealType": "", "sevdeskUrl": "https://my.sevdesk.de/om/detail/type/AN/id/26843508", "created_time": "2026-04-10T06:50:00.000Z", "last_edited_time": "2026-04-10T11:14:00.000Z"}, {"id": "33ec48f4-0763-81f6-920f-d890bb7f2935", "name": "AN-2026-19 \u2013 Learning Journey Klosterfrau", "company": "Amira Media GmbH", "stage": "Closed Won", "dealSize": 19900, "dealType": "", "sevdeskUrl": "https://my.sevdesk.de/om/detail/type/AN/id/26943405", "created_time": "2026-04-10T06:50:00.000Z", "last_edited_time": "2026-04-10T11:14:00.000Z"}];
+const DATA_TS = "10.04.2026 11:35 Uhr";
+
+// ── STATE ─────────────────────────────────────────────
+let allDeals   = BAKED_DEALS;
+let period     = 'year';
+let activeView = 'overview';
+let charts     = {};
+
+// ── FORMATTERS ────────────────────────────────────────
+const fmt = n => new Intl.NumberFormat('de-DE',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(n||0);
+const fmtShort = n => {
+  if(n>=1000000) return (n/1000000).toFixed(1).replace('.',',')+' Mio.';
+  if(n>=1000)    return (n/1000).toFixed(0)+'k';
+  return fmt(n);
+};
+const pct = (a,b) => b ? Math.round(a/b*100) : 0;
+
+// ── PERIOD ────────────────────────────────────────────
+function periodStart(p) {
+  const d = new Date();
+  if (p==='month')   return new Date(d.getFullYear(), d.getMonth(), 1);
+  if (p==='quarter') return new Date(d.getFullYear(), Math.floor(d.getMonth()/3)*3, 1);
+  if (p==='year')    return new Date(d.getFullYear(), 0, 1);
+  return new Date(0);
+}
+function filterByPeriod(deals) {
+  if (period==='all') return deals;
+  const start = periodStart(period);
+  return deals.filter(d => new Date(d.last_edited_time) >= start);
+}
+
+// ── COLORS ────────────────────────────────────────────
+const STAGE_COLOR = {
+  'Lead':        ['var(--text-muted)',  'var(--surface-3)'],
+  'Qualified':   ['var(--warn)',        'var(--warn-bg)'],
+  'Proposal':    ['var(--blue)',        'var(--blue-bg)'],
+  'Negotiation': ['var(--gold)',        'var(--gold-bg)'],
+  'Closed Won':  ['var(--success)',     'var(--success-bg)'],
+  'Closed Lost': ['var(--error)',       'var(--error-bg)'],
+};
+function stageColor(s) { return STAGE_COLOR[s] || ['var(--text-muted)','var(--surface-3)']; }
+
+const AVATAR_SETS = [
+  ['#01696f','#0d3f42'],['#437a22','#1e3015'],['#006494','#0a2233'],
+  ['#964219','#3a1a09'],['#7a39bb','#2a1545'],
+];
+function avatarStyle(i) {
+  const [fg,bg] = AVATAR_SETS[i % AVATAR_SETS.length];
+  return `background:${bg};color:${fg}`;
+}
+function initials(name) {
+  return name.split(/[\s\/|\-]+/).filter(Boolean).slice(0,2).map(w=>w[0]||'').join('').toUpperCase() || '??';
+}
+
+const TYPE_COLORS = ['#4f98a3','#6daa45','#e8af34','#cc5f5f','#7a39bb'];
+
+// ── CHARTS DESTROY ────────────────────────────────────
+function destroyCharts() {
+  Object.values(charts).forEach(c => { try{c.destroy()}catch(e){} });
+  charts = {};
+}
+
+// ── THEME ─────────────────────────────────────────────
+function toggleTheme() {
+  const html = document.documentElement;
+  html.setAttribute('data-theme', html.getAttribute('data-theme')==='dark' ? 'light' : 'dark');
+  destroyCharts();
+  render();
+}
+
+// ── PERIOD SWITCH ─────────────────────────────────────
+function setPeriod(p) {
+  period = p;
+  document.querySelectorAll('.period-btn').forEach((btn,i) => {
+    btn.classList.toggle('active', ['month','quarter','year','all'][i]===p);
+  });
+  if(activeView==='overview') {
+    destroyCharts();
+    render();
+  }
+}
+
+// ── VIEW SWITCH ───────────────────────────────────────
+function switchView(view) {
+  activeView = view;
+  ['overview','deals','customers'].forEach(v => {
+    document.getElementById('nav-'+v)?.classList.toggle('active', v===view);
+  });
+  const titles = {overview:'Sales Dashboard', deals:'Alle Deals', customers:'Kunden-Übersicht'};
+  document.getElementById('topbar-title').textContent = titles[view];
+  const periodGroup = document.getElementById('period-group');
+  periodGroup.style.display = view==='overview' ? 'flex' : 'none';
+  destroyCharts();
+  render();
+}
+
+// ── CSS VAR VALUE ─────────────────────────────────────
+function cssVar(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+// ── MAIN RENDER ───────────────────────────────────────
+function render() {
+  if(activeView==='overview') renderOverview();
+  else if(activeView==='deals') renderDeals();
+  else if(activeView==='customers') renderCustomers();
+}
+
+// ── OVERVIEW ──────────────────────────────────────────
+function renderOverview() {
+  const inPeriod = filterByPeriod(allDeals);
+  const won   = inPeriod.filter(d=>d.stage==='Closed Won');
+  const lost  = inPeriod.filter(d=>d.stage==='Closed Lost');
+  const open  = allDeals.filter(d=>!['Closed Won','Closed Lost'].includes(d.stage));
+  const wonAmt   = won.reduce((s,d)=>s+d.dealSize,0);
+  const lostAmt  = lost.reduce((s,d)=>s+d.dealSize,0);
+  const openAmt  = open.reduce((s,d)=>s+d.dealSize,0);
+  const avgDeal  = won.length ? wonAmt/won.length : 0;
+  const winRate  = (won.length+lost.length) ? pct(won.length,won.length+lost.length) : 0;
+
+  // Top customers (all time, won only)
+  const byCompany = {};
+  allDeals.filter(d=>d.stage==='Closed Won').forEach(d=>{
+    const c = d.company || d.name;
+    if(!byCompany[c]) byCompany[c] = {name:c,amount:0,deals:0};
+    byCompany[c].amount += d.dealSize;
+    byCompany[c].deals++;
+  });
+  const topCustomers = Object.values(byCompany).sort((a,b)=>b.amount-a.amount).slice(0,5);
+  const maxAmt = topCustomers[0]?.amount || 1;
+
+  // Pipeline by stage
+  const STAGES = ['Lead','Qualified','Proposal','Negotiation','Closed Won','Closed Lost'];
+  const stageCounts = {}, stageAmts = {};
+  STAGES.forEach(s=>{ stageCounts[s]=0; stageAmts[s]=0; });
+  allDeals.forEach(d=>{
+    if(stageCounts[d.stage]!==undefined){
+      stageCounts[d.stage]++;
+      stageAmts[d.stage]+=d.dealSize;
+    }
+  });
+
+  // Monthly trend (last 6 months)
+  const monthlyWon = {};
+  const now = new Date();
+  for(let i=5;i>=0;i--){
+    const d=new Date(now.getFullYear(),now.getMonth()-i,1);
+    const key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    monthlyWon[key]={label:d.toLocaleDateString('de-DE',{month:'short',year:'2-digit'}),amount:0,count:0};
+  }
+  allDeals.filter(d=>d.stage==='Closed Won').forEach(d=>{
+    const dt=new Date(d.last_edited_time);
+    const key=`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`;
+    if(monthlyWon[key]){ monthlyWon[key].amount+=d.dealSize; monthlyWon[key].count++; }
+  });
+
+  // Deal types
+  const byType = {};
+  allDeals.filter(d=>d.stage==='Closed Won').forEach(d=>{
+    const t=d.dealType||'Nicht gesetzt';
+    if(!byType[t])byType[t]={count:0,amount:0};
+    byType[t].count++; byType[t].amount+=d.dealSize;
+  });
+  const typeEntries = Object.entries(byType).sort((a,b)=>b[1].amount-a[1].amount);
+
+  // Avg deal cycle
+  const isDark = document.documentElement.getAttribute('data-theme')==='dark';
+  const gridC = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)';
+  const tickC = isDark ? '#797876' : '#7a7974';
+
+  // ── RENDER HTML ──
+  document.getElementById('badge-overview').textContent = allDeals.length;
+  document.getElementById('badge-deals').textContent = allDeals.length;
+  const uniqueCompanies = new Set(allDeals.map(d=>d.company||d.name)).size;
+  document.getElementById('badge-customers').textContent = uniqueCompanies;
+
+  document.getElementById('content').innerHTML = `
+    <!-- KPI GRID -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <span class="kpi-label">Offene Deals</span>
+          <div class="kpi-icon" style="background:var(--blue-bg);color:var(--blue)">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          </div>
+        </div>
+        <div class="kpi-value">${open.length}</div>
+        <div class="kpi-sub">${fmt(openAmt)} Pipeline</div>
+        <span class="kpi-badge badge-blue">${open.length} aktiv</span>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <span class="kpi-label">Gewonnen</span>
+          <div class="kpi-icon" style="background:var(--success-bg);color:var(--success)">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+        </div>
+        <div class="kpi-value">${won.length}</div>
+        <div class="kpi-sub">${fmt(wonAmt)}</div>
+        <span class="kpi-badge badge-success">${winRate}% Win-Rate</span>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <span class="kpi-label">Verloren</span>
+          <div class="kpi-icon" style="background:var(--error-bg);color:var(--error)">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </div>
+        </div>
+        <div class="kpi-value">${lost.length}</div>
+        <div class="kpi-sub">${fmt(lostAmt)}</div>
+        ${lost.length===0?'<span class="kpi-badge badge-success">Keine Verluste</span>':''}
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <span class="kpi-label">Ø Deal-Größe</span>
+          <div class="kpi-icon" style="background:var(--gold-bg);color:var(--gold)">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+          </div>
+        </div>
+        <div class="kpi-value">${fmtShort(avgDeal)}</div>
+        <div class="kpi-sub">Ø gewonnene Deals</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <span class="kpi-label">Gesamtumsatz</span>
+          <div class="kpi-icon" style="background:var(--primary);color:#fff">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+          </div>
+        </div>
+        <div class="kpi-value">${fmtShort(wonAmt)}</div>
+        <div class="kpi-sub">${won.length} abgeschl. Deals</div>
+      </div>
+    </div>
+
+    <!-- CHARTS ROW 1 -->
+    <div class="charts-row">
+      <!-- Monthly Trend -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Umsatz-Trend</div>
+            <div class="card-sub">Gewonnene Deals (Netto) — letzte 6 Monate</div>
+          </div>
+        </div>
+        <div class="chart-wrap" style="height:160px">
+          <canvas id="chart-monthly"></canvas>
+        </div>
+      </div>
+
+      <!-- Pipeline -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Pipeline nach Phase</div>
+            <div class="card-sub">Alle ${allDeals.length} Deals</div>
+          </div>
+        </div>
+        <div class="funnel" id="funnel-chart">
+          ${STAGES.filter(s=>stageCounts[s]>0||stageAmts[s]>0).map(s=>{
+            const total=allDeals.length||1;
+            const p=Math.round(stageCounts[s]/total*100);
+            const [col]=stageColor(s);
+            return `<div class="funnel-row">
+              <span class="funnel-label">${s}</span>
+              <div class="funnel-bar-wrap">
+                <div class="funnel-bar-bg">
+                  <div class="funnel-bar-fill" style="width:${Math.max(p,stageCounts[s]>0?8:0)}%;background:${col}">${stageCounts[s]>0?stageCounts[s]:''}</div>
+                </div>
+              </div>
+              <span class="funnel-meta">${fmt(stageAmts[s])}</span>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+
+      <!-- Won/Lost Donut -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Won / Lost</div>
+            <div class="card-sub">Win-Rate im Zeitraum</div>
+          </div>
+        </div>
+        <div class="donut-wrap">
+          <div class="donut-chart-wrap">
+            <canvas id="chart-donut"></canvas>
+            <div class="donut-center">
+              <span class="donut-pct">${winRate}%</span>
+              <span class="donut-lbl">Win-Rate</span>
+            </div>
+          </div>
+          <div class="donut-legend">
+            <div class="legend-item">
+              <div class="legend-dot-label">
+                <div class="legend-dot" style="background:var(--success)"></div>
+                <span>Gewonnen</span>
+              </div>
+              <span class="legend-val">${won.length} · ${fmt(wonAmt)}</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot-label">
+                <div class="legend-dot" style="background:var(--error)"></div>
+                <span>Verloren</span>
+              </div>
+              <span class="legend-val">${lost.length} · ${fmt(lostAmt)}</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot-label">
+                <div class="legend-dot" style="background:var(--blue)"></div>
+                <span>In Pipeline</span>
+              </div>
+              <span class="legend-val">${open.length} · ${fmt(openAmt)}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHARTS ROW 2 -->
+    <div class="charts-row-2">
+      <!-- Top 5 Kunden -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Top 5 Kunden</div>
+            <div class="card-sub">Nach Gesamtumsatz (gewonnene Deals)</div>
+          </div>
+        </div>
+        <div class="cust-list">
+          ${topCustomers.map((c,i)=>{
+            const barW = Math.round(c.amount/maxAmt*100);
+            const [fg,bg] = AVATAR_SETS[i % AVATAR_SETS.length];
+            const ini = initials(c.name);
+            return `<div class="cust-row">
+              <span class="cust-rank">#${i+1}</span>
+              <div class="cust-avatar" style="background:${bg};color:${fg}">${ini}</div>
+              <div class="cust-info">
+                <div class="cust-name">${c.name}</div>
+                <div style="height:4px;background:var(--surface-3);border-radius:2px;margin-top:.25rem;overflow:hidden">
+                  <div style="height:100%;width:${barW}%;background:${fg};border-radius:2px;transition:width .5s ease"></div>
+                </div>
+              </div>
+              <span class="cust-amt">${fmt(c.amount)}</span>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+
+      <!-- Deal-Typen -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Deal-Typen</div>
+            <div class="card-sub">Gewonnene Deals nach Kategorie</div>
+          </div>
+        </div>
+        <div class="chart-wrap" style="height:160px">
+          <canvas id="chart-types"></canvas>
+        </div>
+      </div>
+
+      <!-- Offene Pipeline Details -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Offene Pipeline</div>
+            <div class="card-sub">Aktuelle Deals nach Phase</div>
+          </div>
+        </div>
+        <div class="funnel">
+          ${['Lead','Qualified','Proposal','Negotiation'].map(s=>{
+            const cnt = stageCounts[s]||0;
+            const amt = stageAmts[s]||0;
+            const [col,bg] = stageColor(s);
+            return `<div style="display:flex;align-items:center;justify-content:space-between;padding:.5rem .75rem;background:var(--surface-3);border-radius:var(--r-sm)">
+              <div style="display:flex;align-items:center;gap:.5rem">
+                <div style="width:8px;height:8px;border-radius:50%;background:${col};flex-shrink:0"></div>
+                <span style="font-size:.75rem;color:var(--text-muted)">${s}</span>
+              </div>
+              <div style="text-align:right">
+                <div style="font-size:.75rem;font-weight:600;color:var(--text)">${cnt} Deal${cnt!==1?'s':''}</div>
+                <div style="font-size:.625rem;font-family:var(--mono);color:var(--text-muted)">${fmt(amt)}</div>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+    </div>
+
+    <!-- AGENT INSIGHTS -->
+    <div class="section-header">
+      <span class="section-title">Agent Insights</span>
+    </div>
+    <div class="insights-grid" id="insights-grid"></div>
+  `;
+
+  // ── CHARTS JS ──────────────────────────────────────
+  const monthLabels  = Object.values(monthlyWon).map(m=>m.label);
+  const monthAmounts = Object.values(monthlyWon).map(m=>m.amount);
+
+  const chartDefaults = {
+    plugins: { legend: { display: false }, tooltip: {
+      backgroundColor: isDark ? '#1c1b19' : '#fff',
+      borderColor: isDark ? '#2e2d2b' : '#d4d1ca',
+      borderWidth: 1,
+      titleColor: isDark ? '#cdccca' : '#28251d',
+      bodyColor: isDark ? '#797876' : '#7a7974',
+      padding: 10,
+      cornerRadius: 6,
+    }},
+    animation: { duration: 600, easing: 'easeOutQuart' },
+  };
+
+  // Monthly bar
+  const ctxM = document.getElementById('chart-monthly');
+  if(ctxM) {
+    charts.monthly = new Chart(ctxM, {
+      type: 'bar',
+      data: {
+        labels: monthLabels,
+        datasets: [{
+          data: monthAmounts,
+          backgroundColor: monthAmounts.map((_,i)=>i===monthAmounts.length-1?'rgba(79,152,163,.9)':'rgba(79,152,163,.4)'),
+          borderRadius: 4,
+          borderSkipped: false,
+        }]
+      },
+      options: {
+        ...chartDefaults,
+        responsive: true, maintainAspectRatio: false,
+        scales: {
+          x: { grid: { display:false }, ticks: { color:tickC, font:{size:11} } },
+          y: { grid: { color:gridC }, ticks: { color:tickC, font:{size:11}, callback: v=>fmtShort(v) } },
+        },
+        plugins: {
+          ...chartDefaults.plugins,
+          tooltip: {
+            ...chartDefaults.plugins.tooltip,
+            callbacks: { label: ctx => fmt(ctx.raw) },
+          }
+        }
+      }
+    });
+  }
+
+  // Won/Lost Donut
+  const ctxD = document.getElementById('chart-donut');
+  if(ctxD) {
+    const allClosed = won.length + lost.length + open.length;
+    charts.donut = new Chart(ctxD, {
+      type: 'doughnut',
+      data: {
+        labels: ['Gewonnen','Verloren','In Pipeline'],
+        datasets: [{
+          data: [won.length, lost.length, open.length],
+          backgroundColor: ['rgba(109,170,69,.85)','rgba(204,95,95,.85)','rgba(85,145,199,.6)'],
+          borderWidth: 2,
+          borderColor: isDark ? '#171614' : '#faf9f7',
+          hoverOffset: 4,
+        }]
+      },
+      options: {
+        ...chartDefaults,
+        responsive: true, maintainAspectRatio: false,
+        cutout: '70%',
+        plugins: {
+          ...chartDefaults.plugins,
+          tooltip: {
+            ...chartDefaults.plugins.tooltip,
+            callbacks: { label: ctx => `${ctx.label}: ${ctx.raw}` },
+          }
+        }
+      }
+    });
+  }
+
+  // Deal Types donut
+  const ctxT = document.getElementById('chart-types');
+  if(ctxT && typeEntries.length > 0) {
+    charts.types = new Chart(ctxT, {
+      type: 'doughnut',
+      data: {
+        labels: typeEntries.map(([t])=>t),
+        datasets: [{
+          data: typeEntries.map(([,v])=>v.count),
+          backgroundColor: TYPE_COLORS.slice(0,typeEntries.length).map(c=>c+'cc'),
+          borderWidth: 2,
+          borderColor: isDark ? '#171614' : '#faf9f7',
+          hoverOffset: 4,
+        }]
+      },
+      options: {
+        ...chartDefaults,
+        responsive: true, maintainAspectRatio: false,
+        cutout: '60%',
+        plugins: {
+          ...chartDefaults.plugins,
+          legend: { display: true, position: 'right',
+            labels: { color: tickC, font: {size: 11}, boxWidth: 10, padding: 8 }
+          },
+          tooltip: {
+            ...chartDefaults.plugins.tooltip,
+            callbacks: { label: ctx => `${ctx.label}: ${ctx.raw} Deal${ctx.raw!==1?'s':''}` },
+          }
+        }
+      }
+    });
+  }
+
+  // ── AGENT INSIGHTS ──────────────────────────────────
+  renderInsights(won, lost, open, wonAmt, openAmt, avgDeal, winRate, topCustomers, typeEntries, allDeals);
+}
+
+function renderInsights(won, lost, open, wonAmt, openAmt, avgDeal, winRate, topCustomers, typeEntries, all) {
+  const insights = [];
+
+  // 1. Conversion rate
+  insights.push({
+    icon: '📊',
+    iconStyle: 'background:var(--blue-bg);color:var(--blue)',
+    title: 'Win-Rate',
+    text: `${winRate}% der abgeschlossenen Deals werden gewonnen. Das entspricht ${won.length} von ${won.length+lost.length} Deals.`,
+    value: null,
+    color: 'var(--blue)',
+  });
+
+  // 2. Top customer concentration
+  const top1 = topCustomers[0];
+  if(top1) {
+    const concentration = pct(top1.amount, wonAmt);
+    insights.push({
+      icon: '⚠️',
+      iconStyle: concentration>40?'background:var(--warn-bg);color:var(--warn)':'background:var(--success-bg);color:var(--success)',
+      title: 'Kundenkonzentration',
+      text: `${top1.name} macht ${concentration}% deines Gesamtumsatzes aus.${concentration>40?' Diversifikation empfohlen.':' Gute Risikostreuung.'}`,
+      value: null,
+      color: concentration>40?'var(--warn)':'var(--success)',
+    });
+  }
+
+  // 3. Pipeline value at risk
+  if(open.length>0) {
+    insights.push({
+      icon: '🎯',
+      iconStyle: 'background:var(--gold-bg);color:var(--gold)',
+      title: 'Pipeline-Potential',
+      text: `${open.length} offene Deals mit einem Gesamtvolumen von ${fmt(openAmt)} warten auf Abschluss.`,
+      value: fmt(openAmt),
+      color: 'var(--gold)',
+    });
+  }
+
+  // 4. Avg deal size insight
+  const largest = [...all].sort((a,b)=>b.dealSize-a.dealSize)[0];
+  if(largest) {
+    insights.push({
+      icon: '🏆',
+      iconStyle: 'background:var(--gold-bg);color:var(--gold)',
+      title: 'Größter Deal',
+      text: `"${largest.name}" (${largest.company||'—'}) ist mit ${fmt(largest.dealSize)} dein größter Deal im CRM.`,
+      value: null,
+      color: 'var(--gold)',
+    });
+  }
+
+  // 5. No deal type tracking
+  const untyped = all.filter(d=>!d.dealType).length;
+  if(untyped > 0) {
+    insights.push({
+      icon: '🏷️',
+      iconStyle: 'background:var(--warn-bg);color:var(--warn)',
+      title: 'Deal-Typen fehlen',
+      text: `${untyped} von ${all.length} Deals haben keinen Deal-Typ gesetzt. Vollständiges Tagging verbessert die Analyse.`,
+      value: null,
+      color: 'var(--warn)',
+    });
+  }
+
+  // 6. Umsatz pro Monat (Hochrechnung)
+  const wonThisYear = all.filter(d=>{
+    const dt = new Date(d.last_edited_time);
+    return d.stage==='Closed Won' && dt.getFullYear()===new Date().getFullYear();
+  });
+  const monthsElapsed = new Date().getMonth()+1;
+  const monthlyAvg = wonThisYear.reduce((s,d)=>s+d.dealSize,0) / monthsElapsed;
+  if(monthlyAvg>0) {
+    insights.push({
+      icon: '📈',
+      iconStyle: 'background:var(--success-bg);color:var(--success)',
+      title: 'Monatlicher Umsatz',
+      text: `Ø ${fmt(monthlyAvg)} pro Monat in ${new Date().getFullYear()}. Jahres-Hochrechnung: ${fmt(monthlyAvg*12)}.`,
+      value: null,
+      color: 'var(--success)',
+    });
+  }
+
+  const grid = document.getElementById('insights-grid');
+  if(!grid) return;
+  grid.innerHTML = insights.map(ins=>`
+    <div class="insight-card">
+      <div class="insight-icon" style="${ins.iconStyle}">${ins.icon}</div>
+      <div class="insight-body">
+        <div class="insight-title">${ins.title}</div>
+        <div class="insight-text">${ins.text}</div>
+        ${ins.value ? `<div class="insight-value" style="color:${ins.color}">${ins.value}</div>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── DEALS VIEW ────────────────────────────────────────
+function renderDeals() {
+  const sorted = [...allDeals].sort((a,b)=>b.dealSize-a.dealSize);
+  document.getElementById('content').innerHTML = `
+    <div class="card" style="flex:1">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Alle Deals</div>
+          <div class="card-sub">${allDeals.length} Deals gesamt · nach Wert sortiert</div>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Name / Angebot</th>
+            <th>Unternehmen</th>
+            <th>Phase</th>
+            <th>Typ</th>
+            <th style="text-align:right">Deal-Größe</th>
+            <th>Angebot</th>
+          </tr></thead>
+          <tbody>
+            ${sorted.map(d=>{
+              const [col,bg]=stageColor(d.stage);
+              return `<tr>
+                <td style="font-weight:500;max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.name}</td>
+                <td style="color:var(--text-muted);max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.company||'—'}</td>
+                <td><span class="stage-chip" style="color:${col};background:${bg}">${d.stage}</span></td>
+                <td style="color:var(--text-muted)">${d.dealType||'—'}</td>
+                <td style="text-align:right;font-family:var(--mono);font-size:.8125rem">${d.dealSize?fmt(d.dealSize):'—'}</td>
+                <td>${d.sevdeskUrl?`<a class="deal-link" href="${d.sevdeskUrl}" target="_blank">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                  Angebot</a>`:'<span style="color:var(--text-faint);font-size:.6875rem">—</span>'}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+// ── CUSTOMERS VIEW ────────────────────────────────────
+function renderCustomers() {
+  const byCompany = {};
+  allDeals.forEach(d=>{
+    const c = d.company || d.name;
+    if(!byCompany[c]) byCompany[c]={name:c,total:0,won:0,open:0,lost:0,deals:0,types:new Set()};
+    byCompany[c].deals++;
+    byCompany[c].total += d.dealSize;
+    if(d.stage==='Closed Won')  byCompany[c].won  += d.dealSize;
+    if(d.stage==='Closed Lost') byCompany[c].lost += d.dealSize;
+    if(!['Closed Won','Closed Lost'].includes(d.stage)) byCompany[c].open += d.dealSize;
+    if(d.dealType) byCompany[c].types.add(d.dealType);
+  });
+  const sorted = Object.values(byCompany).sort((a,b)=>b.won-a.won||b.total-a.total);
+
+  document.getElementById('content').innerHTML = `
+    <div class="card" style="flex:1">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Kunden-Übersicht</div>
+          <div class="card-sub">${sorted.length} Kunden · nach Umsatz sortiert</div>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Kunde</th>
+            <th style="text-align:right">Deals</th>
+            <th style="text-align:right">Gewonnen</th>
+            <th style="text-align:right">Offen</th>
+            <th style="text-align:right">Verloren</th>
+            <th>Typen</th>
+          </tr></thead>
+          <tbody>
+            ${sorted.map((c,i)=>{
+              const [fg,bg] = AVATAR_SETS[i % AVATAR_SETS.length];
+              return `<tr>
+                <td>
+                  <div style="display:flex;align-items:center;gap:.625rem">
+                    <div style="width:26px;height:26px;border-radius:6px;background:${bg};color:${fg};display:flex;align-items:center;justify-content:center;font-size:.5625rem;font-weight:700;flex-shrink:0">${initials(c.name)}</div>
+                    <span style="font-weight:500;max-width:200px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.name}</span>
+                  </div>
+                </td>
+                <td style="text-align:right;font-family:var(--mono)">${c.deals}</td>
+                <td style="text-align:right;font-family:var(--mono);color:var(--success)">${c.won?fmt(c.won):'—'}</td>
+                <td style="text-align:right;font-family:var(--mono);color:var(--blue)">${c.open?fmt(c.open):'—'}</td>
+                <td style="text-align:right;font-family:var(--mono);color:var(--error)">${c.lost?fmt(c.lost):'—'}</td>
+                <td style="color:var(--text-muted);font-size:.6875rem">${[...c.types].join(', ')||'—'}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+// ── LIVE FETCH ───────────────────────────────────────
+async function loadDeals() {
+  const indicator = document.getElementById('sync-indicator');
+  const syncLabel  = document.getElementById('sync-label');
+  if (indicator) indicator.classList.add('syncing');
+  if (syncLabel) syncLabel.textContent = 'Wird geladen…';
+  try {
+    const r   = await fetch(API_URL, { cache: 'no-cache' });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const data = await r.json();
+    const fresh = data.deals || [];
+    if (fresh.length > 0) {
+      allDeals = fresh;
+      const ts = new Date(data.timestamp);
+      const fmt = ts.toLocaleString('de-DE', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+      if (syncLabel) syncLabel.textContent = 'Sync: ' + fmt + ' Uhr';
+      if (indicator) indicator.classList.remove('syncing');
+      if (indicator) indicator.classList.add('live');
+    } else {
+      throw new Error('No deals in response');
+    }
+  } catch (err) {
+    console.warn('Live fetch failed, using baked data:', err.message);
+    allDeals = BAKED_DEALS;
+    if (syncLabel) syncLabel.textContent = 'Offline-Daten (Fallback)';
+    if (indicator) indicator.classList.remove('syncing');
+    if (indicator) indicator.classList.add('error');
+  }
+  destroyCharts();
+  render();
+}
+
+// ── INIT ──────────────────────────────────────────────
+// Show baked data immediately, then refresh from live API
+render();
+loadDeals();
+</script>
+</body>
+</html>
